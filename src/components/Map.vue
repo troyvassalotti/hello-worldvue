@@ -34,33 +34,33 @@ export default {
     parseFile: function (el) {
       // Check to see if there are any Object URLs to revoke
       if (this.currentObjectURLs.length > 0) {
-        for (let obj = 0; obj < this.currentObjectURLs.length; obj++) {
-          URL.revokeObjectURL(this.currentObjectURLs[obj])
+        for (const url of this.currentObjectURLs) {
+          URL.revokeObjectURL(url)
         }
         this.currentObjectURLs = [] // reset the objectURLs array since we are only handling one file at the moment
       }
 
       // Set some variables for use later
       const fileList = el.files
-      const firstFile = fileList[0]
-      const objectURL = URL.createObjectURL(firstFile)
 
-      this.currentObjectURLs.push(objectURL)
+      for (const file of fileList) {
+        let objectURL = URL.createObjectURL(file)
+        this.currentObjectURLs.push(objectURL)
 
-      if (firstFile.type === "application/gpx+xml") {
-        // Parse GPX files
-        let gpx = objectURL
-        new L.GPX(gpx, {async: true}).on('loaded', e => {
-          this.mapDiv.fitBounds(e.target.getBounds())
-        }).addTo(this.mapDiv)
-      } else {
-        // Parse KML and KMZ files
-        let kmz = L.kmzLayer().addTo(this.mapDiv)
-        let control = L.control.layers(null, null, {collapsed: false}).addTo(this.mapDiv)
-        kmz.on('load', e => {
-          control.addOverlay(e.layer, e.name)
-        })
-        kmz.load(objectURL)
+        if (file.type === "application/gpx+xml") {
+          // Parse GPX files
+          new L.GPX(objectURL, {async: true}).on('loaded', e => {
+            this.mapDiv.fitBounds(e.target.getBounds())
+          }).addTo(this.mapDiv)
+        } else {
+          // Parse KML and KMZ files
+          let kmz = L.kmzLayer().addTo(this.mapDiv)
+          let control = L.control.layers(null, null, {collapsed: false}).addTo(this.mapDiv)
+          kmz.on('load', e => {
+            control.addOverlay(e.layer, e.name)
+          })
+          kmz.load(objectURL)
+        }
       }
     }
   },
@@ -73,7 +73,7 @@ export default {
 <template>
   <main>
     <form enctype="multipart/form-data" novalidate>
-      <label for="upload">Upload Your Map <input id="upload" type="file" accept=".kmz, .kml, .gpx" @change="parseFile($event.target)"></label>
+      <label for="upload">Upload Your Map <input id="upload" type="file" multiple accept=".kmz, .kml, .gpx" @change="parseFile($event.target)"></label>
     </form>
     <div id="map"></div>
   </main>
