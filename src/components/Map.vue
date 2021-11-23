@@ -45,6 +45,7 @@ export default {
 
       // Set some variables for use later
       const fileList = el.files
+      let map = this.mapDiv
 
       for (const file of fileList) {
         let objectURL = URL.createObjectURL(file)
@@ -57,7 +58,7 @@ export default {
           new L.GPX(objectURL, {async: true}).on('loaded', e => {
             let el = e.target
             let stats = this.gpxStats
-            this.mapDiv.fitBounds(el.getBounds())
+            map.fitBounds(el.getBounds())
 
             // Grab the total distance
             let distance = el.get_distance_imp()
@@ -76,11 +77,11 @@ export default {
             })
 
             // Grab the max speed
-            let maxSpeed = el.get_speed_max_imp()
+            let elevLoss = el.get_elevation_loss_imp()
             stats.push({
-              type: "Max Speed",
-              value: maxSpeed,
-              unit: "mph"
+              type: "Elevation Loss",
+              value: elevLoss,
+              unit: "ft"
             })
 
             // Grab the elevation gain
@@ -90,13 +91,13 @@ export default {
               value: elevGain,
               unit: "ft"
             })
-          }).addTo(this.mapDiv)
+          }).addTo(map)
         } else {
           // Don't show GPX stats
           this.showGPXStats = false
           // Parse KML and KMZ files
-          let kmz = L.kmzLayer().addTo(this.mapDiv)
-          let control = L.control.layers(null, null, {collapsed: false}).addTo(this.mapDiv)
+          let kmz = L.kmzLayer().addTo(map)
+          let control = L.control.layers(null, null, {collapsed: false}).addTo(map)
           kmz.on('load', e => {
             control.addOverlay(e.layer, e.name)
           })
@@ -144,7 +145,7 @@ label {
 }
 
 .gpxStats {
-  margin-block-start: 5rem;
+  margin-block-start: 3rem;
 }
 
 .stat-type {
