@@ -15,7 +15,9 @@ export default {
     return {
       mapDiv: '',
       center: [40, 0],
-      currentObjectURLs: []
+      currentObjectURLs: [],
+      showGPXStats: false,
+      gpxStats: []
     }
   },
   methods: {
@@ -38,6 +40,7 @@ export default {
           URL.revokeObjectURL(url)
         }
         this.currentObjectURLs = [] // reset the objectURLs array since we are only handling one file at the moment
+        this.gpxStats = [] // reset the GPX stats array since we are only accounting for one track right now
       }
 
       // Set some variables for use later
@@ -48,11 +51,49 @@ export default {
         this.currentObjectURLs.push(objectURL)
 
         if (file.type === "application/gpx+xml") {
+          // Show GPX Stats
+          this.showGPXStats = true
           // Parse GPX files
           new L.GPX(objectURL, {async: true}).on('loaded', e => {
-            this.mapDiv.fitBounds(e.target.getBounds())
+            let el = e.target
+            let stats = this.gpxStats
+            this.mapDiv.fitBounds(el.getBounds())
+
+            // Grab the total distance
+            let distance = el.get_distance_imp()
+            stats.push({
+              type: "Total Distance",
+              value: distance,
+              unit: "miles"
+            })
+
+            // Grab the avg speed
+            let movingSpeed = el.get_moving_speed_imp()
+            stats.push({
+              type: "Average Moving Speed",
+              value: movingSpeed,
+              unit: "mph"
+            })
+
+            // Grab the max speed
+            let maxSpeed = el.get_speed_max_imp()
+            stats.push({
+              type: "Max Speed",
+              value: maxSpeed,
+              unit: "mph"
+            })
+
+            // Grab the elevation gain
+            let elevGain = el.get_elevation_gain_imp()
+            stats.push({
+              type: "Elevation Gain",
+              value: elevGain,
+              unit: "ft"
+            })
           }).addTo(this.mapDiv)
         } else {
+          // Don't show GPX stats
+          this.showGPXStats = false
           // Parse KML and KMZ files
           let kmz = L.kmzLayer().addTo(this.mapDiv)
           let control = L.control.layers(null, null, {collapsed: false}).addTo(this.mapDiv)
@@ -76,6 +117,18 @@ export default {
       <label for="upload">Upload Your Map <input id="upload" type="file" multiple accept=".kmz, .kml, .gpx" @change="parseFile($event.target)"></label>
     </form>
     <div id="map"></div>
+    <section class="gpxStats" v-show="showGPXStats">
+      <header>
+        <h2>Track Stats</h2>
+      </header>
+      <div class="content">
+        <ul>
+          <li v-for="stat in gpxStats">
+            <span class="stat-type">{{ stat.type }}</span>: {{ stat.value }} {{ stat.unit }}
+          </li>
+        </ul>
+      </div>
+    </section>
   </main>
 </template>
 
@@ -88,5 +141,13 @@ label {
   display: inline-flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.gpxStats {
+  margin-block-start: 5rem;
+}
+
+.stat-type {
+  font-weight: bold;
 }
 </style>
