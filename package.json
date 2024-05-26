@@ -8,7 +8,6 @@
     "serve": "vite preview"
   },
   "dependencies": {
-    "@exampledev/new.css": "^1.1.3",
     "leaflet": "^1.9.4",
     "leaflet-gpx": "^1.7.0",
     "leaflet-kmz": "^1.0.9",
